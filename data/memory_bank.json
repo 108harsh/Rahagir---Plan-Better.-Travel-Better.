@@ -1,0 +1,16 @@
+{
+    "harsh_gupta_college_student_2025": {
+        "travel_style": "Budget-Conscious, Fast-Paced",
+        "clothing_standards": {},
+        "past_packing_errors": [
+            {
+                "date": "2025-10-15",
+                "error": "Forgot laptop charger on 3-day trip."
+            }
+        ],
+        "medical_constraints": {
+            "AM_Meds_Time": "08:00",
+            "Allergies": "None"
+        }
+    }
+}
