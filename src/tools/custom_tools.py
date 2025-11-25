@@ -55,3 +55,54 @@ def NotificationManager(message: str, time_offset: str) -> bool:
     print(f"--- Tool: NotificationManager Executed. Scheduled alert for {time_offset} ---")
     # NOTE: Implementation involves integrating with a real alert service (Twilio, email API).
     return True
+# src/tools/custom_tools.py
+
+from pydantic import BaseModel, Field
+from typing import List, Optional
+
+# --- Pydantic Model for Tool Output (Must be precise) ---
+class ItineraryParserOutput(BaseModel):
+    """Structured data extracted from raw itinerary text."""
+    destination_iata: str = Field(..., description="IATA code of the final destination (e.g., DXB, SIN).")
+    arrival_time_utc: str = Field(..., description="ISO 8601 timestamp of arrival time (e.g., 2026-01-10T14:00:00Z).")
+    check_in_time_utc: str = Field(..., description="ISO 8601 timestamp of hotel check-in time.")
+    raw_activities: List[str] = Field(..., description="List of major, unstructured activities mentioned (e.g., 'Desert Safari', 'Meeting').")
+
+# --- The ItineraryParser Tool Function ---
+def ItineraryParser(raw_text: str) -> ItineraryParserOutput:
+    """
+    Parses unstructured text (email, chat message) to extract key trip details,
+    making them machine-readable for the Planner Agent.
+    """
+    print("--- Tool: ItineraryParser Executed ---")
+    
+    # NOTE: We use simple string matching here to simulate successful parsing 
+    # based on your previous input for testing the overall flow.
+    if "Dubai" in raw_text or "DXB" in raw_text:
+        return ItineraryParserOutput(
+            destination_iata="DXB",
+            arrival_time_utc="2026-01-10T14:00:00Z",
+            check_in_time_utc="2026-01-10T17:00:00Z",
+            raw_activities=["Desert Safari on Jan 11th", "Laptop needed for work"]
+        )
+    else:
+        # Default or failure case
+        return ItineraryParserOutput(
+            destination_iata="N/A",
+            arrival_time_utc="N/A",
+            check_in_time_utc="N/A",
+            raw_activities=[]
+        )
+
+# Add remaining tool function signatures (Weather, DocumentGenerator) here as placeholders:
+def WeatherAPICall(location: str, date: str) -> str:
+    """Fetches a simple summary of the 5-day weather forecast."""
+    return "MOCK: Hot and clear."
+
+def DocumentGenerator(content: str, trip_id: str) -> str:
+    """Generates a final, user-ready PDF/Markdown travel guide."""
+    return "MOCK: Document generated successfully."
+
+def NotificationManager(message: str, time_offset: str) -> bool:
+    """Sends a proactive, context-aware alert to the user's preferred channel."""
+    return True
