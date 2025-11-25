@@ -40,4 +40,49 @@ class MonitoringConfig(BaseModel):
     monitoring_interval_min: int = Field(30, description="How often (in minutes) the agent runs the monitor tool.")
     critical_checkpoints: List[CriticalCheckpoint]
 
+# src/agents/loop_monitor_agent.py (Class definition)
+
+from . import MonitorAPICheck # Tool defined in src/tools/api_connectors.py
+
+class AdaptationMonitor:
+    def __init__(self, monitoring_config: MonitoringConfig):
+        self.config = monitoring_config
+        # Note: In a real ADK system, the tool would be instantiated here
+        self.monitor_tool = MonitorAPICheck 
+
+    def start_monitoring_loop(self):
+        """
+        Continuously monitors critical checkpoints and returns data if a critical 
+        change is found, signaling main.py to re-initiate the Planner Agent.
+        """
+        print(f"\n--- Loop Agent Started for Trip {self.config.trip_id} ---")
+        
+        while True:
+            critical_change_detected = False
+            
+            for checkpoint in self.config.critical_checkpoints:
+                
+                # Step 1: Execute the monitoring tool (e.g., check flight status API)
+                current_status = self.monitor_tool(
+                    check_type=checkpoint.check_type, 
+                    location=checkpoint.location
+                )
+                
+                # Step 2: Evaluate against the trigger threshold
+                if current_status.is_critical(checkpoint.trigger_threshold):
+                    critical_change_detected = True
+                    print(f"!!! CRITICAL CHANGE: {current_status.raw_data.get('message')}. RE-PLANNING REQUIRED.")
+                    
+                    # Step 3: Trigger Re-Plan (Exit the loop and return the new data)
+                    return current_status.raw_data 
+
+            if not critical_change_detected:
+                print(f"Monitoring check complete. Next check in {self.config.monitoring_interval_min} minutes.")
+            
+            # Wait for the next monitoring interval
+            time.sleep(self.config.monitoring_interval_min * 60)
+            
+# NOTE: The MonitorAPICheck tool logic must be implemented in src/tools/api_connectors.py
+# (We already outlined this in a previous step, using a mock CurrentStatus class).
+
 
