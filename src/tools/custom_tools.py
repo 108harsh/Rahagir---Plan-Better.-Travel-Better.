@@ -106,3 +106,10 @@ def DocumentGenerator(content: str, trip_id: str) -> str:
 def NotificationManager(message: str, time_offset: str) -> bool:
     """Sends a proactive, context-aware alert to the user's preferred channel."""
     return True
+def TaskScheduler(task_description: str, time: str) -> bool:
+    """
+    Integrates with the user's external calendar or to-do app to schedule 
+    a specific task (e.g., 'Take Medication', 'Print Document').
+    """
+    print(f"--- Tool: TaskScheduler Executed. Scheduled '{task_description}' for {time} ---")
+    return True

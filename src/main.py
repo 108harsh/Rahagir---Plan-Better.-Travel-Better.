@@ -51,11 +51,19 @@ def main():
     # final_artifact = adk_client.process_task(planner, raw_trip_input) 
     
     # --- MOCKING: Use a mock artifact to test the flow ---
+    # src/main.py (Around line 54)
+
+    # --- MOCKING: Use a mock artifact to test the flow ---
     final_artifact = TaskArtifact(
         trip_id=config.trip_id,
         itinerary_timeline=[], # Simplified for this demo
         conflict_resolutions=[{"original_conflict": "3-hour check-in gap.", "recommended_action": "Draft email for early check-in."}],
-        packing_inputs={"weather_summary": "Hot", "activities_tags": ["Business"]}
+        packing_inputs={
+            "weather_summary": "Hot", 
+            "activities_tags": ["Business"],
+            # --- ADDING THE MISSING FIELD ---
+            "compliance_tags": ["Visa Required", "Type G Adapter"] 
+        }
     )
 
     print("\n[2] TRANSITION (A2A Handoff): Planner -> Curation")

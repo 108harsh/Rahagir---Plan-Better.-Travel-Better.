@@ -1,6 +1,13 @@
 # src/tools/api_connectors.py (NEW FILE)
+# src/tools/api_connectors.py
+
+# --- ADD THIS IMPORT LINE ---
+from src.models import TriggerThreshold 
+# ----------------------------
+
 
 from typing import Dict, Any
+
 
 # Define a simple Status class to reflect current conditions
 class CurrentStatus:
