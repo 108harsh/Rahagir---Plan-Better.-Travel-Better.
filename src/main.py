@@ -23,17 +23,43 @@ def load_config():
     config = MonitoringConfig(
         trip_id="DXB-20260110",
         monitoring_interval_min=30,
+```python
+# src/main.py
+
+# Placeholder imports assuming ADK modules and Pydantic models are available
+from src.agents.planner_agent import PlannerAgent, TaskArtifact
+from src.agents.curation_agent import CurationAgent
+from src.agents.loop_monitor_agent import AdaptationMonitor, MonitoringConfig
+from src.tools.custom_tools import ItineraryParser # Example tool access
+
+# --- MOCKING: ADK Initialization ---
+# In a real ADK environment, this handles API keys, model loading, and context.
+class ADKClient:
+    def __init__(self):
+        print("ADK: Initializing Google ADK Client...")
+    
+    def process_task(self, agent_instance, task_input):
+        # Simulates the ADK running the agent's LLM core and tool-calling
+        return agent_instance.run_planning_cycle(task_input)
+
+# --- 1. Define Mock Configuration ---
+# In a real ADK project, this data would be loaded from a config/YAML file.
+def load_config():
+    # Load Monitoring Configuration for the Loop Agent
+    config = MonitoringConfig(
+        trip_id="DXB-20260110",
+        monitoring_interval_min=30,
         critical_checkpoints=[
             {"check_type": "Flight_Status", "location": "DXB", "trigger_threshold": {"delay_minutes": 60}},
         ]
     )
     return config
 
-def main():
+def main(raw_trip_input: str, user_id: str):
     # --- STEP A: Initialize the Environment and Input ---
     adk_client = ADKClient()
     config = load_config()
-    raw_trip_input = "Booked flight to Dubai (DXB) arriving Jan 10th at 14:00. Hotel check-in is 17:00. I need my laptop for work."
+    # raw_trip_input passed as argument
     
     # Define Agent System Prompts (Loaded by ADK)
     planner_prompt = "You are the Rahagir Planner Agent, expert in conflict resolution."
@@ -51,23 +77,12 @@ def main():
     # final_artifact = adk_client.process_task(planner, raw_trip_input) 
     
     # --- MOCKING: Use a mock artifact to test the flow ---
-    # src/main.py (Around line 54)
-
-    # --- MOCKING: Use a mock artifact to test the flow ---
-    final_artifact = TaskArtifact(
-        trip_id=config.trip_id,
-        itinerary_timeline=[], # Simplified for this demo
-        conflict_resolutions=[{"original_conflict": "3-hour check-in gap.", "recommended_action": "Draft email for early check-in."}],
-        packing_inputs={
-            "weather_summary": "Hot", 
-            "activities_tags": ["Business"],
-            # --- ADDING THE MISSING FIELD ---
-            "compliance_tags": ["Visa Required", "Type G Adapter"] 
-        }
-    )
+    # In a real scenario, this comes from the planner.run_planning_cycle(raw_trip_input)
+    final_artifact = planner.run_planning_cycle(raw_trip_input)
 
     print("\n[2] TRANSITION (A2A Handoff): Planner -> Curation")
-    print(f"Conflict Resolution Proposed: {final_artifact.conflict_resolutions[0].recommended_action}")
+    if final_artifact.conflict_resolutions:
+        print(f"Conflict Resolution Proposed: {final_artifact.conflict_resolutions[0].recommended_action}")
 
     # 2. Curation Agent runs (calls Memory_Retrieve, generates PDF, schedules alerts)
     print("\n[3] EXECUTE: Curation Agent (Personalization & Action Tools)")
@@ -82,14 +97,20 @@ def main():
     # critical_data = monitor.start_monitoring_loop() 
     
     print(f"Monitor running in background, checking every {config.monitoring_interval_min} minutes.")
-    print("If critical data found, system will RE-INITIATE PLANNER AGENT.")
     
-    # This architecture perfectly maps the diagram showing data flowing from sources 
-    # through processing systems (Planner/Curation) and then constantly re-evaluated 
-    # by the Loop Agent. 
-
-
+    # Return a summary for the web interface
+    summary = (
+        f"**Trip Planned for {final_artifact.trip_id}**\n\n"
+        f"**Itinerary**:\n" + 
+        "\n".join([f"- {item['time']}: {item['event']}" for item in final_artifact.itinerary_timeline]) +
+        f"\n\n**Conflict Resolved**: {final_artifact.conflict_resolutions[0].recommended_action if final_artifact.conflict_resolutions else 'None'}\n\n"
+        f"**Packing Tips**: {final_artifact.packing_inputs.weather_summary}\n"
+        f"**Monitor**: Active (checking every {config.monitoring_interval_min} mins)."
+    )
+    return summary
 
 
 if __name__ == "__main__":
-    main()
+    # Test run
+    print(main("Test trip to London", "test_user"))
+```

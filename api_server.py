@@ -1,8 +1,15 @@
 # api_server.py
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel,  Field
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
 from src.main import main # Import the main execution function
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # --- Define the API Input Model ---
 # This ensures data sent to the endpoint is structured and validated
@@ -16,35 +23,34 @@ app = FastAPI(
     description="Deploys the three-agent system to provide proactive travel planning and optimization."
 )
 
+# Mount the 'public' directory to serve static files (HTML, CSS, JS)
+app.mount("/static", StaticFiles(directory="public"), name="static")
+
+# Serve the index.html at the root
+@app.get("/")
+async def read_index():
+    return FileResponse('public/index.html')
+
 @app.post("/plan_trip")
 def plan_trip_endpoint(input_data: TravelInput):
     """
     Endpoint that triggers the full sequential Planner -> Curation agent workflow.
-    
-    This function simulates the main execution flow from src/main.py.
-    NOTE: In a production environment, the Loop Agent would run as a separate
-    scheduled task (Cloud Scheduler/Cron job) and the Planner/Curation
-    would run in a thread here.
     """
     try:
-        # In a deployment scenario, we would run the agent workflow with the user input:
-        # final_plan_result = main(input_data.raw_user_input, input_data.user_id) 
-        
-        # For the Capstone demo, we confirm the API structure is correct:
         print(f"\n[API TRIGGERED] User {input_data.user_id} requesting plan for: {input_data.raw_user_input[:50]}...")
         
-        # --- Simulate Running Main Logic ---
-        # The actual main() execution function must be modified to accept user_id/input
-        # main(input_data.raw_user_input, input_data.user_id) 
+        # Call the actual main agent logic
+        # We capture the result to return it to the frontend
+        result = main(input_data.raw_user_input, input_data.user_id)
         
         return {
             "status": "Success",
-            "message": "Rahagir sequential agents (Planner/Curation) initiated. Check notifications for PDF guide.",
-            "trip_id": "DXB-20260110"
+            "message": result if isinstance(result, str) else "Trip planned successfully! Check your notifications.",
+            "trip_id": "DXB-20260110" # This would be dynamic in a real app
         }
     except Exception as e:
-        # Essential for production: handles unexpected errors in agent execution
-        raise HTTPException(status_code=500, detail=f"Agent Execution Error: {e}")
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Deployment Note ---
 # To run this locally: uvicorn api_server:app --reload
