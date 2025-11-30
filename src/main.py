@@ -6,6 +6,7 @@ from src.agents.loop_monitor_agent import AdaptationMonitor, MonitoringConfig
 from src.tools.custom_tools import ItineraryParser 
 from src.tools.memory_tools import Memory_Retrieve, Memory_Update, Memory_GetHistory, Memory_AppendHistory
 from src.tools.doc_tools import DocumentGenerator
+from src.agents.conversation_agent import ConversationalAgent
 import json
 
 # --- MOCKING: ADK Initialization ---
@@ -43,46 +44,56 @@ def main(raw_trip_input: str, user_id: str):
     print(f"Loaded Context for {user_id}: {user_prefs}")
 
     # 2. Initialize Agents
+    convo_agent = ConversationalAgent()
     planner_prompt = f"You are Rahagir. User Context: {user_prefs}. Plan conflicts and packing."
     planner = PlannerAgent(adk_client, planner_prompt)
     
-    # 3. Planner Execution (Pass History)
-    print("\n[1] START: Planner Agent")
-    # Refresh history after append
-    history = Memory_GetHistory(user_id) 
-    final_artifact = planner.run_planning_cycle(raw_trip_input, history)
+    # 3. Run Conversation Agent (Intent Classification)
+    print("\n[1] START: Conversation Agent")
+    convo_result = convo_agent.run(raw_trip_input, history, user_prefs)
     
-    # --- CHECK FOR CHAT RESPONSE ---
-    if final_artifact.chat_response:
-        # Append Agent Response to History
-        Memory_AppendHistory(user_id, "agent", final_artifact.chat_response)
-        return final_artifact.chat_response
+    # 4. Handle Response
+    if convo_result.response_type == "CHAT":
+        # Just return the chat response
+        Memory_AppendHistory(user_id, "agent", convo_result.content)
+        
+        # Update memory if needed
+        if convo_result.updated_memory:
+            for key, value in convo_result.updated_memory.items():
+                Memory_Update(user_id, key, value)
+                
+        return convo_result.content
+        
+    elif convo_result.response_type == "PLAN_REQUEST":
+        # 5. Delegate to Planner
+        print("\n[2] START: Planner Agent (Delegated)")
+        # Refresh history
+        history = Memory_GetHistory(user_id) 
+        final_artifact = planner.run_planning_cycle(raw_trip_input, history)
+        
+        # 6. Curation Execution (Document Generation)
+        print("\n[3] START: Curation Agent (Doc Gen)")
+        doc_link = DocumentGenerator(final_artifact)
+        
+        # 7. Update Memory
+        Memory_Update(user_id, "last_trip_id", final_artifact.trip_id)
 
-    # 4. Curation Execution (Document Generation)
-    print("\n[2] START: Curation Agent (Doc Gen)")
-    doc_link = DocumentGenerator(final_artifact)
-    
-    # 5. Update Memory (Mock update for now)
-    Memory_Update(user_id, "last_trip_id", final_artifact.trip_id)
-
-    # 6. Construct Response
-    questions_text = "\n".join([f"- {q}" for q in final_artifact.follow_up_questions])
-    
-    summary = (
-        f"I've planned your trip to **{final_artifact.trip_id}**!\n\n"
-        f"**Itinerary**:\n" + 
-        "\n".join([f"- {item['time']}: {item['event']}" for item in final_artifact.itinerary_timeline]) +
-        f"\n\n**Conflict Resolved**: {final_artifact.conflict_resolutions[0].recommended_action if final_artifact.conflict_resolutions else 'None'}\n\n"
-        f"**Packing Tips**: {final_artifact.packing_inputs.weather_summary}\n"
-        f"**Download Guide**: [Click here to download your PDF/Guide]({doc_link})\n\n"
-        f"**Suggestions & Questions**:\n{questions_text}\n\n"
-        f"I've also set up a monitor to check for flight delays every 30 mins."
-    )
-    
-    # Append Agent Response to History
-    Memory_AppendHistory(user_id, "agent", summary)
-    
-    return summary
+        # 8. Construct Response
+        questions_text = "\n".join([f"- {q}" for q in final_artifact.follow_up_questions])
+        
+        summary = (
+            f"I've planned your trip to **{final_artifact.trip_id}**!\n\n"
+            f"**Itinerary**:\n" + 
+            "\n".join([f"- {item['time']}: {item['event']}" for item in final_artifact.itinerary_timeline]) +
+            f"\n\n**Conflict Resolved**: {final_artifact.conflict_resolutions[0].recommended_action if final_artifact.conflict_resolutions else 'None'}\n\n"
+            f"**Packing Tips**: {final_artifact.packing_inputs.weather_summary}\n"
+            f"**Download Guide**: [Click here to download your PDF/Guide]({doc_link})\n\n"
+            f"**Suggestions & Questions**:\n{questions_text}\n\n"
+            f"I've also set up a monitor to check for flight delays every 30 mins."
+        )
+        
+        Memory_AppendHistory(user_id, "agent", summary)
+        return summary
 
 if __name__ == "__main__":
-    print(main("Hello", "test_user_v2"))
+    print(main("Hello", "test_user_v3"))

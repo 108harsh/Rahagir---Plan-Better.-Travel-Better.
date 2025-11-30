@@ -24,49 +24,10 @@ class PlannerAgent:
     def run_planning_cycle(self, raw_user_input: str, history: List[Dict[str, str]] = []) -> TaskArtifact:
         print("--- Planner Agent: Running Planning Cycle ---")
         
-        # 1. Parse Input
+        # 1. Parse Input (Still useful for extraction)
         parsed_data = ItineraryParser(raw_user_input)
         
-        # 2. Check if it's a valid trip request
-        if not parsed_data.valid_trip:
-            print("PlannerAgent: Detected CHAT intent.")
-            if self.api_key:
-                try:
-                    # Format history for context
-                    history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
-                    
-                    chat_prompt = f"""
-                    You are Rahagir, a helpful travel agent. 
-                    
-                    Conversation History:
-                    {history_text}
-                    
-                    User: {raw_user_input}
-                    
-                    Respond conversationally. If the user is asking a general travel question, answer it. 
-                    If they are just greeting, greet back. 
-                    Ask where they would like to go if it's not clear.
-                    """
-                    response = self.model.generate_content(chat_prompt)
-                    return TaskArtifact(
-                        trip_id="CHAT",
-                        chat_response=response.text,
-                        itinerary_timeline=[],
-                        conflict_resolutions=[],
-                        packing_inputs=None
-                    )
-                except Exception as e:
-                    print(f"Chat LLM Error: {e}")
-            
-            return TaskArtifact(
-                trip_id="CHAT",
-                chat_response="Hello! I'm Rahagir. Where are you planning to travel today?",
-                itinerary_timeline=[],
-                conflict_resolutions=[],
-                packing_inputs=None
-            )
-
-        # 3. Valid Trip Request -> Plan it
+        # 2. Plan the Trip
         if self.api_key:
             try:
                 # Format history for context
@@ -107,7 +68,7 @@ class PlannerAgent:
             except Exception as e:
                 print(f"LLM Error: {e}. Falling back to mock.")
         
-        # Fallback Mock (Only if API fails AND it was a valid trip request)
+        # Fallback Mock (Only if API fails)
         return TaskArtifact(
             trip_id="DXB-20260110",
             itinerary_timeline=[

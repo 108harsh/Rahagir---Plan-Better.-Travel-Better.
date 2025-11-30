@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from src.main import main
 
 print("--- TEST 1: CHAT (Should be conversational) ---")

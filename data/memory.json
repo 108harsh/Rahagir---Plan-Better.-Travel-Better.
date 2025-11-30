@@ -16,7 +16,25 @@
             "preferences": {},
             "past_trips": [],
             "constraints": [],
-            "last_trip_id": "DXB-20260110"
+            "last_trip_id": "DXB-20260110",
+            "history": [
+                {
+                    "role": "user",
+                    "content": "Hello there"
+                },
+                {
+                    "role": "agent",
+                    "content": "I'm running in offline mode. I can't chat freely, but I can try to plan a trip if you ask explicitly."
+                },
+                {
+                    "role": "user",
+                    "content": "Plan a 3-day trip to Lucknow starting Dec 1st"
+                },
+                {
+                    "role": "agent",
+                    "content": "I'm running in offline mode. I can't chat freely, but I can try to plan a trip if you ask explicitly."
+                }
+            ]
         },
         "web_user_1764480160142": {
             "preferences": {},
@@ -49,6 +67,12 @@
             "last_trip_id": "DXB-20260110"
         },
         "web_user_1764482198870": {
+            "preferences": {},
+            "past_trips": [],
+            "constraints": [],
+            "last_trip_id": "DXB-20260110"
+        },
+        "web_user_1764482428654": {
             "preferences": {},
             "past_trips": [],
             "constraints": [],
