@@ -1,0 +1,13 @@
+{
+    "users": {
+        "default_user": {
+            "preferences": {
+                "airline": "Emirates",
+                "hotel_chain": "Marriott",
+                "dietary": "Vegetarian"
+            },
+            "past_trips": [],
+            "constraints": ["Visa Required for EU", "Asthma"]
+        }
+    }
+}
