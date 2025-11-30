@@ -1,6 +1,6 @@
 # src/models.py
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # --- 1. Planner Agent / Task Artifact Models (from planner_agent.py) ---
 
@@ -17,11 +17,12 @@ class PackingInput(BaseModel):
 
 class TaskArtifact(BaseModel):
     """The complete, structured output passed from the Planner Agent to the Curation Agent."""
-    trip_id: str = Field(..., description="Unique ID for the trip.")
-    itinerary_timeline: List[Dict[str, Any]] = Field(..., description="The clean, chronological list of scheduled events.")
-    conflict_resolutions: List[ConflictResolution] = Field(..., description="List of all conflicts found and the Planner's recommended solutions.")
-    packing_inputs: PackingInput
+    trip_id: str = Field(..., description="Unique ID for the trip, or 'CHAT' if just conversation.")
+    itinerary_timeline: List[Dict[str, Any]] = Field(default=[], description="The clean, chronological list of scheduled events.")
+    conflict_resolutions: List[ConflictResolution] = Field(default=[], description="List of all conflicts found and the Planner's recommended solutions.")
+    packing_inputs: Optional[PackingInput] = None
     follow_up_questions: List[str] = Field(default=[], description="Questions to ask the user for clarification or next steps.")
+    chat_response: Optional[str] = Field(default=None, description="Conversational response if no trip is planned.")
 
 # --- 2. Loop Monitor Agent Models (from loop_monitor_agent.py) ---
 

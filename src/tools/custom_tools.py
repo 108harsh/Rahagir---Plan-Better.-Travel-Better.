@@ -15,6 +15,7 @@ class ItineraryParserOutput(BaseModel):
     arrival_time_utc: str = Field(..., description="ISO 8601 timestamp of arrival time (e.g., 2026-01-10T14:00:00Z).")
     check_in_time_utc: str = Field(..., description="ISO 8601 timestamp of hotel check-in time.")
     raw_activities: List[str] = Field(..., description="List of major, unstructured activities mentioned (e.g., 'Desert Safari', 'Meeting').")
+    valid_trip: bool = Field(default=True, description="True if input is a valid trip request, False if just chat.")
 
 # 2. Itinerary Parser Tool Function
 def ItineraryParser(raw_text: str) -> ItineraryParserOutput:
@@ -37,10 +38,11 @@ def ItineraryParser(raw_text: str) -> ItineraryParserOutput:
             2. Arrival Time in ISO 8601 (UTC). If year is missing, assume 2025. If time missing, assume 12:00:00.
             3. Check-in Time in ISO 8601 (UTC). Assume 3 hours after arrival if not specified.
             4. List of activities mentioned.
+            5. valid_trip: Boolean. True if the user is explicitly asking to plan a trip or mentioning a destination/date. False if it's just a greeting (e.g. "hello", "hi") or a general question.
             
             Text: "{raw_text}"
             
-            Return ONLY a JSON object with keys: destination_iata, arrival_time_utc, check_in_time_utc, raw_activities.
+            Return ONLY a JSON object with keys: destination_iata, arrival_time_utc, check_in_time_utc, raw_activities, valid_trip.
             """
             response = model.generate_content(prompt)
             cleaned = response.text.replace("```json", "").replace("```", "").strip()
@@ -51,11 +53,13 @@ def ItineraryParser(raw_text: str) -> ItineraryParserOutput:
             print(f"Parser LLM Error: {e}")
             
     # Fallback if API fails or not present
+    is_valid = "plan" in raw_text.lower() or "trip" in raw_text.lower() or "go" in raw_text.lower()
     return ItineraryParserOutput(
         destination_iata="LKO" if "lucknow" in raw_text.lower() else "DXB",
         arrival_time_utc="2025-12-01T10:00:00Z",
         check_in_time_utc="2025-12-01T14:00:00Z",
-        raw_activities=["General Sightseeing"]
+        raw_activities=["General Sightseeing"],
+        valid_trip=is_valid
     )
 
 # 3. Weather API Tool Function (Needs a real API or mock)
