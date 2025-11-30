@@ -11,22 +11,6 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# --- Define the API Input Model ---
-# This ensures data sent to the endpoint is structured and validated
-class TravelInput(BaseModel):
-    raw_user_input: str = Field(..., example="Booked flight to DXB arriving Jan 10th at 14:00. Hotel check-in is 17:00.")
-    user_id: str = Field(..., example="harsh_gupta_college_student_2025")
-
-# --- Initialize the FastAPI Application ---
-app = FastAPI(
-    title="Rahagir: Multi-Agent Travel Concierge API",
-    description="Deploys the three-agent system to provide proactive travel planning and optimization."
-)
-
-# Mount the 'public' directory to serve static files (HTML, CSS, JS)
-app.mount("/static", StaticFiles(directory="public"), name="static")
-
-# Serve the index.html at the root
 @app.get("/")
 async def read_index():
     return FileResponse('public/index.html')
