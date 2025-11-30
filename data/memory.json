@@ -7,7 +7,22 @@
                 "dietary": "Vegetarian"
             },
             "past_trips": [],
-            "constraints": ["Visa Required for EU", "Asthma"]
+            "constraints": [
+                "Visa Required for EU",
+                "Asthma"
+            ]
+        },
+        "test_user": {
+            "preferences": {},
+            "past_trips": [],
+            "constraints": [],
+            "last_trip_id": "DXB-20260110"
+        },
+        "web_user_1764480160142": {
+            "preferences": {},
+            "past_trips": [],
+            "constraints": [],
+            "last_trip_id": "DXB-20260110"
         }
     }
 }

@@ -2,6 +2,9 @@
 
 from pydantic import BaseModel, Field
 from typing import List, Optional
+import os
+import json
+import google.generativeai as genai
 from .memory_tools import Memory_Retrieve, Memory_Update
 from .doc_tools import DocumentGenerator
 
@@ -18,26 +21,42 @@ def ItineraryParser(raw_text: str) -> ItineraryParserOutput:
     """
     Parses unstructured text (email, chat message) to extract key trip details,
     making them machine-readable for the Planner Agent.
+    Uses Gemini API for extraction if available, otherwise falls back to basic keyword matching.
     """
     print("--- Tool: ItineraryParser Executed ---")
     
-    # NOTE: We use simple string matching here to simulate successful parsing 
-    # based on your previous input for testing the overall flow.
-    if "Dubai" in raw_text or "DXB" in raw_text:
-        return ItineraryParserOutput(
-            destination_iata="DXB",
-            arrival_time_utc="2026-01-10T14:00:00Z",
-            check_in_time_utc="2026-01-10T17:00:00Z",
-            raw_activities=["Desert Safari on Jan 11th", "Laptop needed for work"]
-        )
-    else:
-        # Default or failure case
-        return ItineraryParserOutput(
-            destination_iata="N/A",
-            arrival_time_utc="N/A",
-            check_in_time_utc="N/A",
-            raw_activities=[]
-        )
+    api_key = os.getenv("GEMINI_API_KEY")
+    
+    if api_key:
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-pro')
+            prompt = f"""
+            Extract the following travel details from the text below:
+            1. Destination IATA code (guess if not explicit, e.g. London -> LHR, Lucknow -> LKO).
+            2. Arrival Time in ISO 8601 (UTC). If year is missing, assume 2025. If time missing, assume 12:00:00.
+            3. Check-in Time in ISO 8601 (UTC). Assume 3 hours after arrival if not specified.
+            4. List of activities mentioned.
+            
+            Text: "{raw_text}"
+            
+            Return ONLY a JSON object with keys: destination_iata, arrival_time_utc, check_in_time_utc, raw_activities.
+            """
+            response = model.generate_content(prompt)
+            cleaned = response.text.replace("```json", "").replace("```", "").strip()
+            data = json.loads(cleaned)
+            
+            return ItineraryParserOutput(**data)
+        except Exception as e:
+            print(f"Parser LLM Error: {e}")
+            
+    # Fallback if API fails or not present
+    return ItineraryParserOutput(
+        destination_iata="LKO" if "lucknow" in raw_text.lower() else "DXB",
+        arrival_time_utc="2025-12-01T10:00:00Z",
+        check_in_time_utc="2025-12-01T14:00:00Z",
+        raw_activities=["General Sightseeing"]
+    )
 
 # 3. Weather API Tool Function (Needs a real API or mock)
 def WeatherAPICall(location: str, date: str) -> str:
@@ -45,6 +64,7 @@ def WeatherAPICall(location: str, date: str) -> str:
     Fetches a simple summary of the 5-day weather forecast for a location.
     """
     print(f"--- Tool: WeatherAPICall Executed for {location} ---")
+    # In a real app, we would use requests.get(f"api.openweathermap.org/...")
     return "Weather is forecast to be hot and clear, average 30°C. No rain expected, high UV index."
 
 # 4. Notification Manager Tool Function

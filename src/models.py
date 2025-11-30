@@ -21,6 +21,7 @@ class TaskArtifact(BaseModel):
     itinerary_timeline: List[Dict[str, Any]] = Field(..., description="The clean, chronological list of scheduled events.")
     conflict_resolutions: List[ConflictResolution] = Field(..., description="List of all conflicts found and the Planner's recommended solutions.")
     packing_inputs: PackingInput
+    follow_up_questions: List[str] = Field(default=[], description="Questions to ask the user for clarification or next steps.")
 
 # --- 2. Loop Monitor Agent Models (from loop_monitor_agent.py) ---
 
