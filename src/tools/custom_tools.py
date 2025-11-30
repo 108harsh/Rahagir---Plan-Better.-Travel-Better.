@@ -38,7 +38,7 @@ def ItineraryParser(raw_text: str) -> ItineraryParserOutput:
             2. Arrival Time in ISO 8601 (UTC). If year is missing, assume 2025. If time missing, assume 12:00:00.
             3. Check-in Time in ISO 8601 (UTC). Assume 3 hours after arrival if not specified.
             4. List of activities mentioned.
-            5. valid_trip: Boolean. True if the user is explicitly asking to plan a trip or mentioning a destination/date. False if it's just a greeting (e.g. "hello", "hi") or a general question.
+            5. valid_trip: Boolean. True if the user is explicitly asking to plan a trip, mentioning a destination/date, OR modifying an existing plan (e.g. "change to Paris"). False if it's just a greeting (e.g. "hello", "hi") or a general question.
             
             Text: "{raw_text}"
             

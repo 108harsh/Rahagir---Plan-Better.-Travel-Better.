@@ -11,11 +11,11 @@ function scrollToBottom() {
 function addMessage(text, isUser = false) {
     const div = document.createElement('div');
     div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-    
+
     // Simple markdown parsing for bold and newlines
     let formattedText = text.replace(/\n/g, '<br>');
     formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
+
     div.innerHTML = formattedText;
     chatContainer.appendChild(div);
     scrollToBottom();
@@ -40,22 +40,29 @@ async function handleSend() {
     chatContainer.appendChild(loadingDiv);
     scrollToBottom();
 
+    // Get or Create User ID
+    let userId = localStorage.getItem('rahagir_user_id');
+    if (!userId) {
+        userId = "web_user_" + Date.now();
+        localStorage.setItem('rahagir_user_id', userId);
+    }
+
     try {
         // 3. Call API
         const response = await fetch('/plan_trip', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 raw_user_input: text,
-                user_id: "web_user_" + Date.now() 
+                user_id: userId
             })
         });
 
         const data = await response.json();
-        
+
         // 4. Remove Loading and Show Response
         document.getElementById(loadingId).remove();
-        
+
         if (data.status === "Success") {
             addMessage(data.message);
             // If there's a trip ID or other details, we could show them here
