@@ -31,6 +31,7 @@ def main(raw_trip_input: str, user_id: str):
     """
     Main entry point for the conversational agent.
     """
+    print(f"DEBUG: main() called for user {user_id}")
     adk_client = ADKClient()
     config = load_config()
     

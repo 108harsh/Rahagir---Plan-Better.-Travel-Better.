@@ -9,6 +9,7 @@ import json
 
 class PlannerAgent:
     def __init__(self, llm_model, system_prompt):
+        print("DEBUG: PlannerAgent v2 INITIALIZED")
         self.llm = llm_model 
         self.system_prompt = system_prompt
         self.tools = ['ItineraryParser', 'WeatherAPICall', 'GoogleSearch'] 
