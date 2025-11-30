@@ -21,7 +21,7 @@ class PlannerAgent:
         else:
             print("PlannerAgent: No API Key found. Using MOCK mode.")
 
-    def run_planning_cycle(self, raw_user_input: str) -> TaskArtifact:
+    def run_planning_cycle(self, raw_user_input: str, history: List[Dict[str, str]] = []) -> TaskArtifact:
         print("--- Planner Agent: Running Planning Cycle ---")
         
         # 1. Parse Input
@@ -32,7 +32,21 @@ class PlannerAgent:
             print("PlannerAgent: Detected CHAT intent.")
             if self.api_key:
                 try:
-                    chat_prompt = f"You are Rahagir, a helpful travel agent. The user said: '{raw_user_input}'. Respond conversationally and ask where they would like to go."
+                    # Format history for context
+                    history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
+                    
+                    chat_prompt = f"""
+                    You are Rahagir, a helpful travel agent. 
+                    
+                    Conversation History:
+                    {history_text}
+                    
+                    User: {raw_user_input}
+                    
+                    Respond conversationally. If the user is asking a general travel question, answer it. 
+                    If they are just greeting, greet back. 
+                    Ask where they would like to go if it's not clear.
+                    """
                     response = self.model.generate_content(chat_prompt)
                     return TaskArtifact(
                         trip_id="CHAT",
@@ -55,9 +69,15 @@ class PlannerAgent:
         # 3. Valid Trip Request -> Plan it
         if self.api_key:
             try:
+                # Format history for context
+                history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
+                
                 # Real LLM Call
                 prompt = f"""
                 {self.system_prompt}
+                
+                Conversation History:
+                {history_text}
                 
                 User Input: {raw_user_input}
                 Parsed Data: {parsed_data.json()}
@@ -100,7 +120,8 @@ class PlannerAgent:
             packing_inputs=PackingInput(
                 weather_summary="Hot and clear, high UV index.", 
                 activities_tags=parsed_data.raw_activities,
-                compliance_tags=["Visa Required", "Type C Power Adapter"]
+                compliance_tags=["Visa Required", "Type C Power Adapter"],
+                weather_severity="None"
             ),
             follow_up_questions=["Do you need a vegetarian meal on the flight?", "Would you like to book a desert safari?"]
         )

@@ -51,3 +51,30 @@ def Memory_Update(user_id: str, section: str, value: Any) -> str:
         
     save_memory(data)
     return "Memory updated successfully."
+
+def Memory_AppendHistory(user_id: str, role: str, content: str):
+    """
+    Appends a message to the user's conversation history.
+    """
+    data = load_memory()
+    if user_id not in data["users"]:
+        data["users"][user_id] = {"preferences": {}, "past_trips": [], "constraints": [], "history": []}
+    
+    if "history" not in data["users"][user_id]:
+        data["users"][user_id]["history"] = []
+        
+    # Limit history to last 20 turns
+    history = data["users"][user_id]["history"]
+    history.append({"role": role, "content": content})
+    if len(history) > 20:
+        history = history[-20:]
+    data["users"][user_id]["history"] = history
+    
+    save_memory(data)
+
+def Memory_GetHistory(user_id: str) -> List[Dict[str, str]]:
+    """
+    Retrieves the conversation history for a user.
+    """
+    data = load_memory()
+    return data.get("users", {}).get(user_id, {}).get("history", [])

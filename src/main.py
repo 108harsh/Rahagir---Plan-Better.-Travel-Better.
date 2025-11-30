@@ -4,7 +4,7 @@ from src.agents.planner_agent import PlannerAgent, TaskArtifact
 from src.agents.curation_agent import CurationAgent
 from src.agents.loop_monitor_agent import AdaptationMonitor, MonitoringConfig
 from src.tools.custom_tools import ItineraryParser 
-from src.tools.memory_tools import Memory_Retrieve, Memory_Update
+from src.tools.memory_tools import Memory_Retrieve, Memory_Update, Memory_GetHistory, Memory_AppendHistory
 from src.tools.doc_tools import DocumentGenerator
 import json
 
@@ -33,20 +33,29 @@ def main(raw_trip_input: str, user_id: str):
     adk_client = ADKClient()
     config = load_config()
     
-    # 1. Retrieve Context from Memory
+    # 1. Retrieve Context and History
     user_prefs = Memory_Retrieve(user_id)
+    history = Memory_GetHistory(user_id)
+    
+    # Append User Message to History
+    Memory_AppendHistory(user_id, "user", raw_trip_input)
+    
     print(f"Loaded Context for {user_id}: {user_prefs}")
 
     # 2. Initialize Agents
     planner_prompt = f"You are Rahagir. User Context: {user_prefs}. Plan conflicts and packing."
     planner = PlannerAgent(adk_client, planner_prompt)
     
-    # 3. Planner Execution
+    # 3. Planner Execution (Pass History)
     print("\n[1] START: Planner Agent")
-    final_artifact = planner.run_planning_cycle(raw_trip_input)
+    # Refresh history after append
+    history = Memory_GetHistory(user_id) 
+    final_artifact = planner.run_planning_cycle(raw_trip_input, history)
     
     # --- CHECK FOR CHAT RESPONSE ---
     if final_artifact.chat_response:
+        # Append Agent Response to History
+        Memory_AppendHistory(user_id, "agent", final_artifact.chat_response)
         return final_artifact.chat_response
 
     # 4. Curation Execution (Document Generation)
@@ -69,7 +78,11 @@ def main(raw_trip_input: str, user_id: str):
         f"**Suggestions & Questions**:\n{questions_text}\n\n"
         f"I've also set up a monitor to check for flight delays every 30 mins."
     )
+    
+    # Append Agent Response to History
+    Memory_AppendHistory(user_id, "agent", summary)
+    
     return summary
 
 if __name__ == "__main__":
-    print(main("Test trip to London", "test_user"))
+    print(main("Hello", "test_user_v2"))
